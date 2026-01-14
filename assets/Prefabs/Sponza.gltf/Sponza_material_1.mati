@@ -1,0 +1,22 @@
+{
+    "material": "materials\\standard_pbr.mat",
+    "properties": {
+        "ENABLE_AO_MAP": 0,
+        "ENABLE_MR_MAP": 1,
+        "ENABLE_EMISSIVE_MAP": 0,
+        "ENABLE_ALPHA_MASK": 1,
+        "AlbedoMap": "Prefabs\\Sponza.gltf\\8006627369776289000.png",
+        "NormalMap": "Prefabs\\Sponza.gltf\\12501374198249454378.jpg",
+        "MetallicRoughnessMap": "Prefabs\\Sponza.gltf\\715093869573992647.jpg",
+        "ENABLE_NORMAL_MAP": 1,
+        "Albedo": [
+            0.5879999995231628,
+            0.5879999995231628,
+            0.5879999995231628,
+            1.0
+        ],
+        "Metallic": 1.0,
+        "Roughness": 1.0,
+        "AlphaCutoff": 0.5
+    }
+}

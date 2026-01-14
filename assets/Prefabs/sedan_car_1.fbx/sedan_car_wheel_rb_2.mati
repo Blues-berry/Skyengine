@@ -1,0 +1,19 @@
+{
+    "material": "materials\\standard_pbr.mat",
+    "properties": {
+        "ENABLE_AO_MAP": 0,
+        "ENABLE_MR_MAP": 0,
+        "ENABLE_EMISSIVE_MAP": 0,
+        "Roughness": 1.0,
+        "ENABLE_NORMAL_MAP": 0,
+        "ENABLE_ALPHA_MASK": 0,
+        "Metallic": 0.10000000149011612,
+        "Albedo": [
+            0.64000004529953,
+            0.64000004529953,
+            0.64000004529953,
+            1.0
+        ],
+        "AlphaCutoff": 0.5
+    }
+}

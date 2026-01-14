@@ -1,0 +1,112 @@
+{
+    "actors": [
+        {
+            "name": "DirectionalLight",
+            "transform": {
+                "translation": [0.0, 10.0, 0.0],
+                "rotation": [0.707, 0.0, -0.707, 0.0],
+                "scale": [1.0, 1.0, 1.0]
+            },
+            "components": [
+                {
+                    "type": "MainDirectLightComponent",
+                    "data": {
+                        "color": [1.0, 0.98, 0.95],
+                        "intensity": 1.2,
+                        "castShadow": true
+                    }
+                }
+            ]
+        },
+        {
+            "name": "SkyBox",
+            "transform": {
+                "translation": [0.0, 0.0, 0.0],
+                "rotation": [0.0, 0.0, 0.0, 1.0],
+                "scale": [1.0, 1.0, 1.0]
+            },
+            "components": [
+                {
+                    "type": "SkyBoxComponent",
+                    "data": {
+                        "skybox": "00000000-0000-0000-0000-000000000000",
+                        "radiance": "00000000-0000-0000-0000-000000000000",
+                        "irradiance": "00000000-0000-0000-0000-000000000000"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Camera",
+            "transform": {
+                "translation": [0.0, 2.0, 10.0],
+                "rotation": [0.0, 0.0, 0.0, 1.0],
+                "scale": [1.0, 1.0, 1.0]
+            },
+            "components": [
+                {
+                    "type": "CameraComponent",
+                    "data": {
+                        "fov": 60.0,
+                        "near": 0.1,
+                        "far": 1000.0
+                    }
+                }
+            ]
+        },
+        {
+            "name": "LODObject_SmallCity",
+            "transform": {
+                "translation": [0.0, 0.0, 0.0],
+                "rotation": [0.0, 0.0, 0.0, 1.0],
+                "scale": [1.0, 1.0, 1.0]
+            },
+            "components": [
+                {
+                    "type": "LODComponent",
+                    "data": {
+                        "enableLOD": true,
+                        "forceLOD": false,
+                        "forcedLevel": 0,
+                        "lodBias": 0.0,
+                        "crossFadeDuration": 0.1,
+                        "levels": [
+                            {
+                                "meshUuid": "00000000-0000-0000-0000-000000000001",
+                                "screenPercentage": 1.0,
+                                "triangleCount": 10000,
+                                "vertexCount": 5000,
+                                "boundsCenter": [0.0, 0.0, 0.0],
+                                "boundsRadius": 10.0
+                            },
+                            {
+                                "meshUuid": "00000000-0000-0000-0000-000000000002",
+                                "screenPercentage": 0.5,
+                                "triangleCount": 5000,
+                                "vertexCount": 2500,
+                                "boundsCenter": [0.0, 0.0, 0.0],
+                                "boundsRadius": 10.0
+                            },
+                            {
+                                "meshUuid": "00000000-0000-0000-0000-000000000003",
+                                "screenPercentage": 0.25,
+                                "triangleCount": 2500,
+                                "vertexCount": 1250,
+                                "boundsCenter": [0.0, 0.0, 0.0],
+                                "boundsRadius": 10.0
+                            },
+                            {
+                                "meshUuid": "00000000-0000-0000-0000-000000000004",
+                                "screenPercentage": 0.125,
+                                "triangleCount": 1000,
+                                "vertexCount": 500,
+                                "boundsCenter": [0.0, 0.0, 0.0],
+                                "boundsRadius": 10.0
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    ]
+}
