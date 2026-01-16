@@ -46,7 +46,9 @@ TEST(StaticMeshTest, StaticMesthCreate01)
 
     ASSERT_EQ(indexBuffer != nullptr, true);
     ASSERT_EQ(indexBuffer->Num(), 6);
+ 
 
+    
     ASSERT_EQ(indexBuffer->GetIndexU32(0), 0);
     ASSERT_EQ(indexBuffer->GetIndexU32(1), 1);
     ASSERT_EQ(indexBuffer->GetIndexU32(2), 2);
