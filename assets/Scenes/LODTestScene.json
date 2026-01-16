@@ -1,0 +1,158 @@
+{
+  "version": 1,
+  "name": "LOD Test Scene",
+  "description": "Test scene for LOD system functionality",
+  "actors": [
+    {
+      "name": "LOD_Test_Center",
+      "transform": {
+        "translation": [0, 0, 10],
+        "rotation": [0, 0, 0, 1],
+        "scale": [1, 1, 1]
+      },
+      "components": [
+        {
+          "type": "StaticMeshComponent",
+          "properties": {
+            "mesh": "Prefabs/TestModel_LOD0.mesh"
+          }
+        },
+        {
+          "type": "LODComponent",
+          "properties": {
+            "baseName": "TestModel",
+            "enableLOD": true,
+            "lodBias": 0.0,
+            "forcedLOD": -1,
+            "enableCrossfade": true,
+            "crossfadeDuration": 0.2,
+            "levels": [
+              {
+                "meshUuid": "00000000-0000-0000-0000-000000000000",
+                "screenPercentage": 1.0,
+                "triangleCount": 5000,
+                "vertexCount": 3000,
+                "boundsCenter": [0, 0, 0],
+                "boundsRadius": 5.0
+              },
+              {
+                "meshUuid": "00000000-0000-0000-0000-000000000001",
+                "screenPercentage": 0.5,
+                "triangleCount": 2000,
+                "vertexCount": 1200,
+                "boundsCenter": [0, 0, 0],
+                "boundsRadius": 5.0
+              },
+              {
+                "meshUuid": "00000000-0000-0000-0000-000000000002",
+                "screenPercentage": 0.25,
+                "triangleCount": 800,
+                "vertexCount": 500,
+                "boundsCenter": [0, 0, 0],
+                "boundsRadius": 5.0
+              }
+            ]
+          }
+        },
+        {
+          "type": "LODDebugComponent",
+          "properties": {
+            "enableDebugOverlay": true,
+            "enableWireframe": false,
+            "overlayX": 10.0,
+            "overlayY": 10.0,
+            "overlayColor": [1.0, 1.0, 1.0, 1.0]
+          }
+        }
+      ]
+    },
+    {
+      "name": "LOD_Test_Far",
+      "transform": {
+        "translation": [0, 0, 50],
+        "rotation": [0, 0, 0, 1],
+        "scale": [1, 1, 1]
+      },
+      "components": [
+        {
+          "type": "StaticMeshComponent",
+          "properties": {
+            "mesh": "Prefabs/TestModel_LOD0.mesh"
+          }
+        },
+        {
+          "type": "LODComponent",
+          "properties": {
+            "baseName": "TestModel",
+            "enableLOD": true,
+            "lodBias": 0.0,
+            "forcedLOD": -1,
+            "enableCrossfade": true,
+            "crossfadeDuration": 0.2,
+            "levels": [
+              {
+                "meshUuid": "00000000-0000-0000-0000-000000000000",
+                "screenPercentage": 1.0,
+                "triangleCount": 5000,
+                "vertexCount": 3000,
+                "boundsCenter": [0, 0, 0],
+                "boundsRadius": 5.0
+              },
+              {
+                "meshUuid": "00000000-0000-0000-0000-000000000001",
+                "screenPercentage": 0.5,
+                "triangleCount": 2000,
+                "vertexCount": 1200,
+                "boundsCenter": [0, 0, 0],
+                "boundsRadius": 5.0
+              },
+              {
+                "meshUuid": "00000000-0000-0000-0000-000000000002",
+                "screenPercentage": 0.25,
+                "triangleCount": 800,
+                "vertexCount": 500,
+                "boundsCenter": [0, 0, 0],
+                "boundsRadius": 5.0
+              }
+            ]
+          }
+        },
+        {
+          "type": "LODDebugComponent",
+          "properties": {
+            "enableDebugOverlay": true,
+            "enableWireframe": false,
+            "overlayX": 10.0,
+            "overlayY": 30.0,
+            "overlayColor": [1.0, 1.0, 1.0, 1.0]
+          }
+        }
+      ]
+    },
+    {
+      "name": "MainCamera",
+      "transform": {
+        "translation": [0, 5, -20],
+        "rotation": [0, 0, 0, 1],
+        "scale": [1, 1, 1]
+      },
+      "components": [
+        {
+          "type": "CameraComponent",
+          "properties": {
+            "fov": 60.0,
+            "near": 0.1,
+            "far": 1000.0
+          }
+        }
+      ]
+    }
+  ],
+  "environment": {
+    "ambientLight": {
+      "intensity": 0.1,
+      "color": [1.0, 1.0, 1.0]
+    },
+    "skybox": "textures/default_sky.hdr"
+  }
+}

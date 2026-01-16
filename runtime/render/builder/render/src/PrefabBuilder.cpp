@@ -17,6 +17,9 @@
 #include <render/adaptor/assets/MaterialAsset.h>
 #include <render/adaptor/assets/MeshAsset.h>
 #include <render/adaptor/assets/AnimationAsset.h>
+#include <rapidjson/document.h>
+#include <rapidjson/writer.h>
+#include <rapidjson/stringbuffer.h>
 
 #include <render/adaptor/assets/SkeletonAsset.h>
 #include <render/skeleton/SkeletonMeshRenderer.h>
@@ -56,6 +59,13 @@ namespace sky::builder {
         std::vector<uint32_t> indices;
     };
 
+    struct LODGroupInfo {
+        std::string baseName;              // Base name (e.g., "Building")
+        std::vector<uint32_t> meshIndices; // Mesh indices sorted by LOD level
+        std::vector<float> screenSizes;      // Screen percentage for each LOD
+        bool isLODGroup = false;          // Whether this is an LOD group
+    };
+
     struct PrefabBuildContext {
         std::string name;
         AssetSourcePath path;
@@ -68,6 +78,10 @@ namespace sky::builder {
         SkeletonAssetBuildContext skeleton;
         AssetSourcePtr skeletonSource;
         std::vector<RenderPrefabNode> nodes;
+
+        // LOD related
+        std::vector<LODGroupInfo> lodGroups;
+        std::unordered_map<std::string, uint32_t> nameToLODGroup;
     };
 
     static inline Vector4 FromAssimp(const aiColor4D &color)
@@ -314,6 +328,150 @@ namespace sky::builder {
                 }
             }
         }
+    }
+
+    // LOD detection and processing functions
+    static bool IsLODMeshName(const std::string &meshName, std::string &baseName, uint32_t &lodLevel, float &screenSize)
+    {
+        // UE HLOD naming pattern: "Small_City_LVL_HLOD0_256m_767m_L0_X0_Y0_Material"
+        // Or: "Building_LOD0", "Building_LOD1", "Building_LOD2"
+
+        const std::string HLOD_MARKER = "HLOD";
+        const std::string LOD_MARKER = "LOD";
+        const std::string L_MARKER = "_L";  // UE L0, L1, L2...
+
+        // Check UE HLOD format
+        size_t hlodPos = meshName.find(HLOD_MARKER);
+        if (hlodPos != std::string::npos) {
+            size_t lPos = meshName.find(L_MARKER, hlodPos);
+            if (lPos != std::string::npos) {
+                // Extract LOD level (L0, L1, L2...)
+                size_t levelEnd = meshName.find('_', lPos + 2);
+                if (levelEnd != std::string::npos) {
+                    std::string levelStr = meshName.substr(lPos + 2, levelEnd - lPos - 2);
+                    try {
+                        lodLevel = std::stoi(levelStr);
+
+                        // Calculate screen size threshold (UE defaults)
+                        // L0 = 1.0, L1 = 0.5, L2 = 0.25, L3 = 0.125
+                        screenSize = 1.0f / static_cast<float>(1 << lodLevel);
+
+                        // Extract base name (remove LOD and material parts)
+                        size_t matPos = meshName.find("_Material");
+                        if (matPos != std::string::npos) {
+                            baseName = meshName.substr(0, hlodPos - 1);
+                        } else {
+                            baseName = meshName.substr(0, levelEnd);
+                        }
+
+                        LOG_I(TAG, "Detected UE HLOD: %s -> Base: %s, LOD: %d, Screen: %.2f",
+                            meshName.c_str(), baseName.c_str(), lodLevel, screenSize);
+                        return true;
+                    } catch (...) {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        // Check standard LOD format (LOD0, LOD1, LOD2...)
+        size_t lodPos = meshName.find(LOD_MARKER);
+        if (lodPos != std::string::npos) {
+            size_t levelStart = lodPos + LOD_MARKER.length();
+            size_t levelEnd = levelStart;
+            while (levelEnd < meshName.length() && std::isdigit(meshName[levelEnd])) {
+                levelEnd++;
+            }
+
+            if (levelEnd > levelStart) {
+                std::string levelStr = meshName.substr(levelStart, levelEnd - levelStart);
+                try {
+                    lodLevel = std::stoi(levelStr);
+                    screenSize = 1.0f / static_cast<float>(1 << lodLevel);
+                    baseName = meshName.substr(0, lodPos);
+
+                    LOG_I(TAG, "Detected Standard LOD: %s -> Base: %s, LOD: %d, Screen: %.2f",
+                        meshName.c_str(), baseName.c_str(), lodLevel, screenSize);
+                    return true;
+                } catch (...) {
+                    return false;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    static void DetectLODGroups(const aiScene *scene, PrefabBuildContext &context)
+    {
+        LOG_I(TAG, "Detecting LOD groups in scene...");
+
+        std::unordered_map<std::string, LODGroupInfo> lodMap;
+
+        for (uint32_t i = 0; i < scene->mNumMeshes; ++i) {
+            aiMesh *mesh = scene->mMeshes[i];
+            std::string meshName(mesh->mName.C_Str());
+
+            if (meshName.empty()) {
+                continue;
+            }
+
+            std::string baseName;
+            uint32_t lodLevel = 0;
+            float screenSize = 1.0f;
+
+            if (IsLODMeshName(meshName, baseName, lodLevel, screenSize)) {
+                // Found LOD mesh
+                if (lodMap.find(baseName) == lodMap.end()) {
+                    LODGroupInfo group;
+                    group.baseName = baseName;
+                    group.isLODGroup = true;
+                    lodMap[baseName] = group;
+                }
+
+                auto &group = lodMap[baseName];
+
+                // Ensure we have enough space
+                while (group.meshIndices.size() <= lodLevel) {
+                    group.meshIndices.push_back(~0u);
+                    group.screenSizes.push_back(0.0f);
+                }
+
+                group.meshIndices[lodLevel] = i;
+                group.screenSizes[lodLevel] = screenSize;
+            }
+        }
+
+        // Add LOD groups to build context
+        uint32_t groupIndex = 0;
+        for (const auto &pair : lodMap) {
+            const auto &group = pair.second;
+
+            // Remove invalid LOD levels
+            std::vector<uint32_t> validIndices;
+            std::vector<float> validScreenSizes;
+
+            for (size_t i = 0; i < group.meshIndices.size(); ++i) {
+                if (group.meshIndices[i] != ~0u) {
+                    validIndices.push_back(group.meshIndices[i]);
+                    validScreenSizes.push_back(group.screenSizes[i]);
+                }
+            }
+
+            if (!validIndices.empty()) {
+                LODGroupInfo cleanGroup = group;
+                cleanGroup.meshIndices = validIndices;
+                cleanGroup.screenSizes = validScreenSizes;
+
+                context.lodGroups.push_back(cleanGroup);
+                context.nameToLODGroup[group.baseName] = groupIndex++;
+
+                LOG_I(TAG, "Created LOD group '%s' with %zu LOD levels",
+                    group.baseName.c_str(), validIndices.size());
+            }
+        }
+
+        LOG_I(TAG, "Total LOD groups detected: %zu", context.lodGroups.size());
     }
 
     static void ProcessSkeletonHierarchy(const aiScene *scene, const aiNode* node, uint32_t parentIndex, SkeletonAssetBuildContext &skeleton) // NOLINT
@@ -712,6 +870,9 @@ namespace sky::builder {
 
         ProcessMaterials(scene, context, request);
 
+        // Detect LOD groups
+        DetectLODGroups(scene, context);
+
         ProcessSkeleton(scene, context);
         ProcessAnimation(scene, context);
 
@@ -731,6 +892,81 @@ namespace sky::builder {
             auto archive = file->WriteAsArchive();
             JsonOutputArchive bin(*archive);
             data.SaveJson(bin);
+        }
+
+        // Save LOD configuration (if exists)
+        if (!context.lodGroups.empty()) {
+            AssetSourcePath lodPath = {};
+            lodPath.bundle = SourceAssetBundle::WORKSPACE;
+            lodPath.path = context.path.path / FilePath(context.name + ".lod");
+
+            rapidjson::Document doc;
+            doc.SetObject();
+            rapidjson::Value lodGroups(rapidjson::kArrayType);
+
+            for (const auto &group : context.lodGroups) {
+                rapidjson::Value lodGroup(rapidjson::kObjectType);
+
+                rapidjson::Value baseName;
+                baseName.SetString(group.baseName.c_str(), doc.GetAllocator());
+                lodGroup.AddMember("baseName", baseName, doc.GetAllocator());
+
+                rapidjson::Value levels(rapidjson::kArrayType);
+                for (size_t i = 0; i < group.meshIndices.size(); ++i) {
+                    rapidjson::Value level(rapidjson::kObjectType);
+
+                    rapidjson::Value meshUuid;
+                    // Use mesh index's UUID (meshes need to be saved first)
+                    uint32_t meshIndex = group.meshIndices[i];
+                    if (meshIndex < context.meshes.size()) {
+                        auto uuidStr = context.meshes[meshIndex]->uuid.ToString();
+                        meshUuid.SetString(uuidStr.c_str(), doc.GetAllocator());
+                    }
+
+                    level.AddMember("meshUuid", meshUuid, doc.GetAllocator());
+
+                    rapidjson::Value screenSize(group.screenSizes[i]);
+                    level.AddMember("screenPercentage", screenSize, doc.GetAllocator());
+
+                    level.AddMember("triangleCount", 0, doc.GetAllocator());
+                    level.AddMember("vertexCount", 0, doc.GetAllocator());
+
+                    rapidjson::Value center(rapidjson::kArrayType);
+                    center.PushBack(0.0f, doc.GetAllocator());
+                    center.PushBack(0.0f, doc.GetAllocator());
+                    center.PushBack(0.0f, doc.GetAllocator());
+                    level.AddMember("boundsCenter", center, doc.GetAllocator());
+
+                    rapidjson::Value radius(1.0f);
+                    level.AddMember("boundsRadius", radius, doc.GetAllocator());
+
+                    levels.PushBack(level, doc.GetAllocator());
+                }
+
+                lodGroup.AddMember("levels", levels, doc.GetAllocator());
+                lodGroups.PushBack(lodGroup, doc.GetAllocator());
+            }
+
+            doc.AddMember("lodGroups", lodGroups, doc.GetAllocator());
+
+            rapidjson::Value enableLOD(true);
+            doc.AddMember("enableLOD", enableLOD, doc.GetAllocator());
+
+            rapidjson::Value lodBias(0.0f);
+            doc.AddMember("lodBias", lodBias, doc.GetAllocator());
+
+            // Save JSON file
+            {
+                auto file = AssetDataBase::Get()->CreateOrOpenFile(lodPath);
+                auto archive = file->WriteAsArchive();
+                rapidjson::StringBuffer buffer;
+                rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+                doc.Accept(writer);
+                archive->SaveRaw(buffer.GetString(), buffer.GetSize());
+            }
+
+            AssetDataBase::Get()->RegisterAsset(lodPath);
+            LOG_I(TAG, "Saved LOD configuration: %zu LOD groups", context.lodGroups.size());
         }
 
         AssetDataBase::Get()->RegisterAsset(sourcePath);

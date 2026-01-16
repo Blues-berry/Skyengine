@@ -18,6 +18,8 @@
 #include <render/adaptor/components/StaticMeshComponent.h>
 #include <render/adaptor/components/SkeletonMeshComponent.h>
 #include <render/adaptor/components/SkyBoxComponent.h>
+#include <render/adaptor/components/LODComponent.h>
+#include <render/adaptor/components/LODDebugComponent.h>
 #include <render/adaptor/Reflection.h>
 #include <render/adaptor/assets/TechniqueAsset.h>
 #include <render/RenderTechniqueLibrary.h>
@@ -48,6 +50,8 @@ namespace sky {
         CameraComponent::Reflect(context);
         SkeletonMeshComponent::Reflect(context);
         SkyBoxComponent::Reflect(context);
+        LODComponent::Reflect(context);
+        LODDebugComponent::Reflect(context);
 
         SkeletonDisplayComponent::Reflect(context);
         AnimationPreviewComponent::Reflect(context);
@@ -60,6 +64,8 @@ namespace sky {
             ComponentFactory::Get()->RegisterComponent<SkeletonMeshComponent>(GROUP);
             ComponentFactory::Get()->RegisterComponent<CameraComponent>(GROUP);
             ComponentFactory::Get()->RegisterComponent<SkyBoxComponent>(GROUP);
+            ComponentFactory::Get()->RegisterComponent<LODComponent>(GROUP);
+            ComponentFactory::Get()->RegisterComponent<LODDebugComponent>(GROUP);
         }
 
         {

@@ -14,6 +14,7 @@ sky_add_library(TARGET RenderAdaptor STATIC
         Animation
         ImGuiRender
         Framework
+        3rdParty::rapidjson
     INSTALL_DIR
         include
     )
